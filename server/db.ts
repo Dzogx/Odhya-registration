@@ -1,6 +1,7 @@
-import { eq } from "drizzle-orm";
+import { count, desc, eq, gte, lte, or, sum } from "drizzle-orm";
+import { like } from "drizzle-orm/sql";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, InsertRegistration, registrations, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +90,88 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function createRegistration(data: InsertRegistration) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  const result = await db.insert(registrations).values(data);
+  return result;
+}
+
+export async function getRegistrations(filters?: {
+  status?: string;
+  search?: string;
+  startDate?: Date;
+  endDate?: Date;
+}) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  let query = db.select().from(registrations) as any;
+
+  if (filters?.status) {
+    query = query.where(eq(registrations.status, filters.status as any));
+  }
+
+  if (filters?.search) {
+    const searchTerm = `%${filters.search}%`;
+    query = query.where(
+      or(
+        like(registrations.fullName, searchTerm),
+        like(registrations.phoneNumber, searchTerm),
+        like(registrations.address, searchTerm)
+      )
+    );
+  }
+
+  if (filters?.startDate) {
+    query = query.where(gte(registrations.createdAt, filters.startDate));
+  }
+
+  if (filters?.endDate) {
+    query = query.where(lte(registrations.createdAt, filters.endDate));
+  }
+
+  return query.orderBy(desc(registrations.createdAt));
+}
+
+export async function getRegistrationById(id: number) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  const result = await db.select().from(registrations).where(eq(registrations.id, id)).limit(1);
+  return result[0];
+}
+
+export async function updateRegistration(id: number, data: Partial<InsertRegistration>) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  return db.update(registrations).set(data).where(eq(registrations.id, id));
+}
+
+export async function deleteRegistration(id: number) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  return db.delete(registrations).where(eq(registrations.id, id));
+}
+
+export async function getRegistrationStats() {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  const result = await db.select({
+    totalCount: count(),
+    totalRams: sum(registrations.ramCount),
+    status: registrations.status,
+  }).from(registrations).groupBy(registrations.status);
+  return result;
+}
