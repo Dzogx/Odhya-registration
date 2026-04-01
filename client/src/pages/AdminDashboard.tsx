@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Loader2, Download, Search, Trash2, Edit2, BarChart3 } from "lucide-react";
+import { Loader2, Download, Search, Trash2, Edit2, BarChart3, FileSpreadsheet } from "lucide-react";
+import * as XLSX from "xlsx";
 import { useLocation } from "wouter";
 
 const statusLabels: Record<string, string> = {
@@ -127,6 +128,30 @@ export default function AdminDashboard() {
     toast.success("تم تصدير البيانات بنجاح");
   };
 
+  const handleExportExcel = () => {
+    if (!registrations || registrations.length === 0) {
+      toast.error("لا توجد بيانات للتصدير");
+      return;
+    }
+
+    const headers = ["الرقم", "الاسم الكامل", "رقم الهاتف", "العنوان", "عدد الأضاحي", "الحالة", "التاريخ"];
+    const rows = registrations.map((reg: any) => [
+      reg.id,
+      reg.fullName,
+      reg.phoneNumber,
+      reg.address,
+      reg.ramCount,
+      statusLabels[reg.status],
+      new Date(reg.createdAt).toLocaleDateString("ar-SA"),
+    ]);
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "الطلبات");
+    XLSX.writeFile(wb, `طلبات_الأضاحي_${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast.success("تم تصدير البيانات بنجاح");
+  };
+
   const filteredRegistrations = useMemo(() => {
     return registrations || [];
   }, [registrations]);
@@ -229,7 +254,11 @@ export default function AdminDashboard() {
 
               <Button onClick={handleExportCSV} className="bg-green-600 hover:bg-green-700 whitespace-nowrap">
                 <Download className="w-4 h-4 ml-2" />
-                تصدير البيانات
+                تصدير CSV
+              </Button>
+              <Button onClick={handleExportExcel} className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap">
+                <FileSpreadsheet className="w-4 h-4 ml-2" />
+                تصدير Excel
               </Button>
             </div>
           </CardContent>
