@@ -30,6 +30,7 @@ export const appRouter = router({
       .input(z.object({
         fullName: z.string().min(1, "الاسم الكامل مطلوب"),
         phoneNumber: z.string().min(1, "رقم الهاتف مطلوب"),
+        email: z.string().email().optional().or(z.literal("")),
         address: z.string().min(1, "العنوان مطلوب"),
         ramCount: z.number().int().min(1, "عدد الأضاحي يجب أن يكون 1 على الأقل"),
       }))
@@ -37,6 +38,7 @@ export const appRouter = router({
         return createRegistration({
           fullName: input.fullName,
           phoneNumber: input.phoneNumber,
+          email: input.email || null,
           address: input.address,
           ramCount: input.ramCount,
         });

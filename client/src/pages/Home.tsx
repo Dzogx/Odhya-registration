@@ -14,9 +14,12 @@ export default function Home() {
       <header className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-8 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">منصة تسجيل أضاحي العيد</h1>
-              <p className="text-xl text-blue-100">بلدية العالية - ولاية توڨرت</p>
+            <div className="flex items-center gap-6">
+              <img src="https://d2xsxph8kpxj0f.cloudfront.net/310419663029402729/CcWQGhVXdcw9LEdi9CtY9R/logo-elalia_40e92efc.png" alt="شعار بلدية العالية" className="h-24 w-auto" />
+              <div>
+                <h1 className="text-4xl font-bold mb-2">منصة تسجيل أضاحي العيد</h1>
+                <p className="text-xl text-blue-100">بلدية العالية - ولاية توڨرت</p>
+              </div>
             </div>
              <Award className="w-16 h-16 opacity-80" />
           </div>

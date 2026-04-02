@@ -1,7 +1,7 @@
 import { count, desc, eq, gte, lte, or, sum } from "drizzle-orm";
 import { like } from "drizzle-orm/sql";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, InsertRegistration, registrations, users } from "../drizzle/schema";
+import { InsertUser, InsertRegistration, registrations, users, notifications } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -174,4 +174,36 @@ export async function getRegistrationStats() {
     status: registrations.status,
   }).from(registrations).groupBy(registrations.status);
   return result;
+}
+
+// Notification functions
+export async function createNotification(data: any) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  return db.insert(notifications).values(data);
+}
+
+export async function getNotificationsByRegistration(registrationId: number) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  return db.select().from(notifications).where(eq(notifications.registrationId, registrationId));
+}
+
+export async function updateNotificationStatus(id: number, status: string, errorMessage?: string) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  const updateData: any = { status };
+  if (status === 'sent') {
+    updateData.sentAt = new Date();
+  }
+  if (errorMessage) {
+    updateData.errorMessage = errorMessage;
+  }
+  return db.update(notifications).set(updateData).where(eq(notifications.id, id));
 }

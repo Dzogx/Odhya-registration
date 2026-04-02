@@ -14,6 +14,7 @@ import { Loader2, CheckCircle2 } from "lucide-react";
 const registrationSchema = z.object({
   fullName: z.string().min(3, "الاسم الكامل يجب أن يكون 3 أحرف على الأقل"),
   phoneNumber: z.string().regex(/^[0-9+\-\s()]+$/, "رقم الهاتف غير صحيح"),
+  email: z.string().email("بريد إلكتروني غير صحيح").optional().or(z.literal("")),
   address: z.string().min(5, "العنوان يجب أن يكون 5 أحرف على الأقل"),
   ramCount: z.number().int().min(1, "عدد الأضاحي يجب أن يكون 1 على الأقل").max(100, "عدد الأضاحي لا يمكن أن يتجاوز 100"),
 });
@@ -29,6 +30,7 @@ export default function Register() {
     defaultValues: {
       fullName: "",
       phoneNumber: "",
+      email: "",
       address: "",
       ramCount: 1,
     },
@@ -110,6 +112,26 @@ export default function Register() {
                       <FormControl>
                         <Input
                           placeholder="أدخل رقم هاتفك"
+                          {...field}
+                          className="border-gray-300 focus:border-blue-500"
+                          dir="ltr"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-gray-700 font-semibold">البريد الإلكتروني (اختياري)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="أدخل بريدك الإلكتروني"
                           {...field}
                           className="border-gray-300 focus:border-blue-500"
                           dir="ltr"
