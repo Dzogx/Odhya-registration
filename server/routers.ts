@@ -10,7 +10,21 @@ import {
   getRegistrationStats,
   updateRegistration,
   deleteRegistration,
+  getRegistrationById,
 } from "./db";
+import {
+  sendRegistrationConfirmationEmail,
+  sendRegistrationConfirmationSMS,
+  sendStatusChangeEmail,
+  sendStatusChangeSMS,
+} from "./notifications";
+
+const statusLabels: Record<string, string> = {
+  pending: "قيد الانتظار",
+  approved: "موافق عليه",
+  rejected: "مرفوض",
+  completed: "مكتمل",
+};
 
 export const appRouter = router({
   system: systemRouter,
@@ -35,13 +49,34 @@ export const appRouter = router({
         ramCount: z.number().int().min(1, "عدد الأضاحي يجب أن يكون 1 على الأقل"),
       }))
       .mutation(async ({ input }) => {
-        return createRegistration({
+        const result = await createRegistration({
           fullName: input.fullName,
           phoneNumber: input.phoneNumber,
           email: input.email || null,
           address: input.address,
           ramCount: input.ramCount,
         });
+
+        // Send confirmation notifications (non-blocking)
+        try {
+          if (input.email) {
+            await sendRegistrationConfirmationEmail(
+              1,
+              input.fullName,
+              input.email
+            );
+          }
+          await sendRegistrationConfirmationSMS(
+            1,
+            input.fullName,
+            input.phoneNumber
+          );
+        } catch (error) {
+          console.error("[Notifications] Error sending confirmation:", error);
+          // Don't fail the registration if notifications fail
+        }
+
+        return result;
       }),
 
     list: protectedProcedure
@@ -79,10 +114,42 @@ export const appRouter = router({
         if (ctx.user?.role !== 'admin') {
           throw new TRPCError({ code: 'FORBIDDEN' });
         }
-        return updateRegistration(input.id, {
+
+        // Get registration data before update
+        const registration = await getRegistrationById(input.id);
+        if (!registration) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'الطلب غير موجود' });
+        }
+
+        const result = await updateRegistration(input.id, {
           status: input.status,
           notes: input.notes,
         });
+
+        // Send status change notifications (non-blocking)
+        if (input.status && registration.email) {
+          try {
+            const statusLabel = statusLabels[input.status] || input.status;
+            await sendStatusChangeEmail(
+              input.id,
+              registration.fullName,
+              registration.email,
+              input.status,
+              statusLabel
+            );
+            await sendStatusChangeSMS(
+              input.id,
+              registration.fullName,
+              registration.phoneNumber,
+              statusLabel
+            );
+          } catch (error) {
+            console.error("[Notifications] Error sending status change:", error);
+            // Don't fail the update if notifications fail
+          }
+        }
+
+        return result;
       }),
 
     delete: protectedProcedure
