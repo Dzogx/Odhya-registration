@@ -159,9 +159,18 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">لوحة التحكم</h1>
-          <p className="text-gray-600">إدارة طلبات الأضاحي</p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">لوحة التحكم</h1>
+            <p className="text-gray-600">إدارة طلبات الأضاحي</p>
+          </div>
+          <Button 
+            onClick={() => setLocation('/reports')}
+            className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2"
+          >
+            <BarChart3 className="w-4 h-4" />
+            التقارير والإحصائيات
+          </Button>
         </div>
 
         {/* Statistics Cards */}
